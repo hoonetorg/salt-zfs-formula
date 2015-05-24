@@ -1,6 +1,7 @@
-zfs__pkg_zfs-release-package:
-  pkg.installed:
-    - name: {{ salt['pillar.get']('zfs:zfs_release_pkg', 'zfs-release')}}
+zfs__cmd_requirements_are_installed:
+  cmd.run:
+    - name: echo "requirements are installed"
+    - unless: true
 {% set slsrequires =salt['pillar.get']('zfs:slsrequires', False) %}
 {% if slsrequires is defined and slsrequires %}
     - require:
@@ -16,7 +17,7 @@ zfs__file_/etc/modprobe.d/zfs.conf:
   file.managed:
     - name: /etc/modprobe.d/zfs.conf
     - require:
-      - pkg: zfs__pkg_zfs-release-package
+      - cmd: zfs__cmd_requirements_are_installed
     - watch_in:
       - cmd: zfs__cmd_dracut
     - require_in:
@@ -32,7 +33,7 @@ zfs__file_/etc/sysctl.d/zfs.conf:
   file.managed:
     - name: /etc/sysctl.d/zfs.conf
     - require:
-      - pkg: zfs__pkg_zfs-release-package
+      - cmd: zfs__cmd_requirements_are_installed
     - watch_in:
       - cmd: zfs__cmd_dracut
     - contents: |
@@ -44,7 +45,7 @@ zfs__cmd_sysctl_restart:
   cmd.wait:
     - name: systemctl restart systemd-sysctl
     - require:
-      - pkg: zfs__pkg_zfs-release-package
+      - cmd: zfs__cmd_requirements_are_installed
     - watch_in:
       - cmd: zfs__cmd_dracut
     - require_in:
@@ -57,7 +58,7 @@ zfs__cmd_dracut:
   cmd.wait:
     - name: dracut -f
     - require:
-      - pkg: zfs__pkg_zfs-release-package
+      - cmd: zfs__cmd_requirements_are_installed
     - require_in:
       - pkg: zfs__pkg_zfs
 
@@ -67,7 +68,7 @@ zfs__pkg_zfs:
       - kernel-devel
       - zfs
     - require:
-      - pkg: zfs__pkg_zfs-release-package
+      - cmd: zfs__cmd_requirements_are_installed
 
 
 {% for pool, pool_data in zfs_data.pools.items()|sort %}
