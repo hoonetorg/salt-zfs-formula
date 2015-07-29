@@ -1,1 +1,1 @@
-# salt-zfs
+# salt-zfs-formula
