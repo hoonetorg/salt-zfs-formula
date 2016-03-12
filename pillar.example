@@ -1,0 +1,29 @@
+zfs:
+  #optional
+  #slsrequires:
+  #  - "sls: netcfg.file"
+  #  - "sls: disk.encr"
+  data:
+    kernel_opts:
+      vm.swappiness: 10
+      vm.min_free_kbytes: 512000
+    module_opts:
+      - "options zfs zfs_arc_min=1073741824 zfs_arc_max=4294967296 zfs_prefetch_disable=1 l2arc_noprefetch=1 zfs_txg_timeout=5"
+    pools:
+      data:
+        vdevs: "raidz /dev/mapper/crypt_data_disk_1 /dev/mapper/crypt_data_disk_2 /dev/mapper/crypt_data_disk_3 cache /dev/disk/by-id/ata-Samsung-serial1-part6 /dev/disk/by-id/ata-Samsung-serial2-part6"
+        create_opts: "-o ashift=12 -m none"
+        opts:
+          comment: "pool-for-ceph"
+        volumeopts:
+          xattr: "sa"
+          acltype: "posixacl"
+          compression: "lz4"
+          atime: "off"
+        volumes:
+          ceph:
+            create_opts: ""
+          ceph/osd:
+            create_opts: "-o mountpoint=/srv/zfs/ceph/osd"
+            opts:
+              mountpoint: "/srv/zfs/ceph/osd/pooldata"
