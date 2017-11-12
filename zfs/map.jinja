@@ -1,0 +1,46 @@
+# -*- coding: utf-8 -*-
+# vim: ft=yaml
+
+{%- load_yaml as zfs_os_family %}
+base:
+  pkgs:
+    - zfs
+  services:
+    zfs-import-cache:
+      state: enabled
+    zfs-import-scan:
+      state: disabled
+    zfs-mount:
+      state: running
+      enabled: True
+    zfs-share:
+      state: running
+      enabled: True
+    zfs-zed:
+      state: running
+      enabled: True
+    zfs.target:
+      state: running
+      enabled: True
+
+default:
+  sysconfdir: /etc/sysconfig
+
+Debian:
+  sysconfdir: /etc/default
+
+RedHat:
+  sysconfdir: /etc/sysconfig
+
+{%- endload %}
+
+
+#create zfs_default_plus_pillar_lookup where 
+# - base is defaults for all os's
+# - base is merged with and overridden by os_family settings (default if os_family could not be found in dict) 
+# - resulting dict is merged with 'zfs:lookup' - pillar (pillar overrides)
+{%- set zfs_default_plus_pillar_lookup = salt['grains.filter_by'](zfs_os_family, grain='os_family', merge=salt['pillar.get']('zfs:lookup'), default='default', base='base') %}
+
+
+# now zfs_default_plus_pillar_lookup is merged with 'zfs'-pillar ('zfs'-pillar overrides zfs_default_plus_pillar_lookup
+{%- set zfs = salt['pillar.get']('zfs', default=zfs_default_plus_pillar_lookup, merge=True) %}

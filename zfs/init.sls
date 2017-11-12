@@ -1,3 +1,5 @@
+{% from "zfs/map.jinja" import zfs with context %}
+
 zfs__cmd_requirements_are_installed:
   cmd.run:
     - name: echo "requirements are installed"
@@ -65,11 +67,35 @@ zfs__cmd_dracut:
 zfs__pkg_zfs:
   pkg.installed:
     - pkgs:
-      - kernel-devel
+      #- kernel-devel
       - zfs
     - require:
       - cmd: zfs__cmd_requirements_are_installed
 
+zfs__modprobe_zfs:
+  cmd.run:
+    - name: modprobe zfs
+    - unless: lsmod|grep zfs
+    - require:
+      - pkg: zfs__pkg_zfs
+
+{% for service, service_data in zfs.services.items()|sort %}
+zfs__services_{{service}}:
+  service.{{service_data.state}}:
+    - name: {{service}}
+{% if service_data.get('enabled', False) %}
+    - enable: True
+{% endif %}
+    - require:
+      - cmd: zfs__modprobe_zfs
+    - require_in:
+      - cmd: zfs__install_finished
+{% endfor %}
+
+zfs__install_finished:
+  cmd.run:
+    - name: /bin/true
+    - unless: /bin/true
 
 {% for pool, pool_data in zfs_data.pools.items()|sort %}
 
@@ -77,9 +103,9 @@ zfs__pool_create_{{pool}}:
   cmd.run:
     - name: zpool create {{pool_data.create_opts}} {{pool}} {{pool_data.vdevs}}
     - unless: zpool list {{pool}} || zpool import -f {{pool}}
-    - onlyif: test -z "`blkid|grep zfs_member`"
+    - onlyif: test -z "`blkid -c /dev/null $(echo '{{pool_data.vdevs}}'|perl -pe 's/\b(log|cache|spare|mirror|raidz[1-3]*)\b//g') |grep zfs_member`"
     - require:
-      - pkg: zfs__pkg_zfs
+      - cmd: zfs__install_finished
 
 zfs__pool_import_{{pool}}:
   cmd.run:
