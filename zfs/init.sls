@@ -3,7 +3,7 @@
 zfs__cmd_requirements_are_installed:
   cmd.run:
     - name: echo "requirements are installed"
-    - unless: true
+    - unless: /bin/true
 {% set slsrequires =salt['pillar.get']('zfs:slsrequires', False) %}
 {% if slsrequires is defined and slsrequires %}
     - require:
